@@ -1,2 +1,2 @@
-# segger-jlink-rtos-plugin-sdk
-An xPack with the SEGGER J-Link GDB RTOS plug-in SDK
+This project does not use the `master` branch, please
+switch to the `xpack` branch to get the project files.
