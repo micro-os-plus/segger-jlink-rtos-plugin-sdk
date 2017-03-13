@@ -7,7 +7,7 @@ This SDK is the base for thread-aware debugging plug-ins for SEGGER J-Link GDB s
 ## Easy install
 
 ```
-npm @ilg/segger-jlink-rtos-plugin-sdk
+npm install @ilg/segger-jlink-rtos-plugin-sdk
 ```
 
 ## Original files
