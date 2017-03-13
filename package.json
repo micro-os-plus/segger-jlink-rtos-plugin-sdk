@@ -33,13 +33,15 @@
       "email": "support@segger.com",
       "url": "https://www.segger.com/"
     }
-  ],  
+  ],
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/micro-os-plus/segger-jlink-rtos-plugin-sdk/issues"
   },
   "config": {},
-  "dependencies": {},
-  "xpack": {}, 
-  "homepage": "https://github.com/micro-os-plus/segger-jlink-rtos-plugin-sdk#readme"
+  "dependencies": {
+    "@ilg/drtm": "latest"
+  },
+  "xpack": {},
+  "homepage": "https://github.com/micro-os-plus/segger-jlink-rtos-plugin-sdk"
 }
