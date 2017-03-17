@@ -1,4 +1,4 @@
-# SEGGER J-Link GDB RTOS plug-in SDK
+## SEGGER J-Link GDB RTOS plug-in SDK
 
 An xPack with the SEGGER J-Link GDB RTOS plug-in SDK sources. 
 
