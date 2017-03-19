@@ -266,6 +266,7 @@ namespace segger
          */
 
       private:
+
         const server_api_t* api_;
       };
 
