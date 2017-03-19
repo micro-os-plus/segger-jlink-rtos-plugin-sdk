@@ -50,15 +50,107 @@ namespace segger
   {
 
     /**
-     * @brief
-     * A memory manager that allocates memory via
+     * @brief A standard allocator that allocates memory via
      * the backend allocate() function.
      */
-    template<typename T>
+    template<typename T, typename S>
+      class allocator
+      {
+      public:
+
+        // Standard types.
+        using value_type = T;
+        using server_api_t = S;
+
+      public:
+
+        allocator (const server_api_t* api) noexcept
+        {
+#if defined(DEBUG)
+          printf ("%s(%p) @%p\n", __func__, api, this);
+#endif /* defined(DEBUG) */
+
+          api_ = api;
+        }
+
+        allocator (allocator const & a) = default;
+
+        template<typename U>
+          allocator (allocator<U, S> const & other, const server_api_t* api) noexcept
+          {
+            api_ = api;
+          }
+
+        allocator&
+        operator= (allocator const & a) = default;
+
+        value_type*
+        allocate (std::size_t objects)
+        {
+#if defined(DEBUG)
+          printf ("%s(%zu) %p\n", __func__, objects, this);
+#endif /* defined(DEBUG) */
+
+          if (objects > max_size ())
+            {
+              throw std::system_error (
+                  std::error_code (EINVAL, std::system_category ()));
+            }
+
+          value_type*p = static_cast<value_type*> (api_->allocate (
+              objects * sizeof(value_type)));
+
+#if defined(DEBUG)
+          printf ("%s(%zu)=%p %p\n", __func__, objects, p, this);
+#endif /* defined(DEBUG) */
+
+          return p;
+        }
+
+        void
+        deallocate (value_type* p, std::size_t objects) noexcept
+        {
+#if defined(DEBUG)
+          printf ("%s(%p,%zu) %p\n", __func__, p, objects, this);
+#endif /* defined(DEBUG) */
+
+          assert(objects <= max_size ());
+          api_->deallocate (p);
+        }
+
+        std::size_t
+        max_size (void) const noexcept
+        {
+          return std::numeric_limits<std::size_t>::max () / sizeof(value_type);
+        }
+
+        allocator
+        select_on_container_copy_construction (void) const noexcept
+        {
+          return allocator (api_);
+        }
+
+      private:
+
+      private:
+        const server_api_t* api_;
+      };
+
+    // ========================================================================
+
+    /**
+     * @brief A memory manager that allocates memory via
+     * the backend allocate() function.
+     *
+     * Useful when the application requires a polymorphic allocator;
+     * otherwise use the simple allocator.
+     */
+    template<typename S>
       class memory_resource : public ::drtm::memory_resource
       {
       public:
-        using server_api_t = T;
+
+        using server_api_t = S;
 
       public:
 
@@ -177,9 +269,7 @@ namespace segger
         const server_api_t* api_;
       };
 
-  // template<typename T>
-  //  const typename memory_resource<T>::server_api_t* memory_resource<T>::api_;
-
+  // ==========================================================================
   } /* namespace drtm */
 } /* namespace segger */
 
