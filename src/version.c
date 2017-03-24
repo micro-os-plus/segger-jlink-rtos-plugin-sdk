@@ -37,15 +37,21 @@
  * Internet: www.segger.com        Support:  support@segger.com
  */
 
-#include <segger-jlink-rtos-plugin-sdk/rtos-plugin.h>
 #include <segger-jlink-rtos-plugin-sdk/version.h>
 
-struct
+typedef struct version_s
 {
   int major;
   int minor;
   int patch;
-} ilg_segger_jlink_rtos_plugin_sdk_version =
+} version_t;
+
+#pragma GCC diagnostic push
+#if defined(__clang__)
+#pragma clang diagnostic ignored "-Wmissing-variable-declarations"
+#endif /* defined(__clang__) */
+
+version_t ilg_segger_jlink_rtos_plugin_sdk_version =
   {
   //
       XPACK_ILG_SEGGER_JLINK_RTOS_PLUGIN_SDK_VERSION_MAJOR,
@@ -53,3 +59,5 @@ struct
       XPACK_ILG_SEGGER_JLINK_RTOS_PLUGIN_SDK_VERSION_PATCH
   /**/
   };
+
+#pragma GCC diagnostic pop
