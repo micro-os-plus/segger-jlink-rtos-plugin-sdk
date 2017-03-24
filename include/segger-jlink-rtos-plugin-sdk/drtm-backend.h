@@ -51,6 +51,9 @@ namespace segger
   namespace drtm
   {
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpadded"
+
     /**
      * This template class provides an implementation for the DRTM backend
      * that forwards calls to the SEGGER J-Link plug-in SDK C API.
@@ -66,7 +69,10 @@ namespace segger
         constexpr static std::size_t tmp_buf_size_bytes = 256;
         using server_api_t = T;
         using symbols_t = U;
-        using target_addr_t = typename U::element_type;
+
+        // Common types; will be propagated where needed.
+        using target_addr_t = rtos_plugin_target_addr_t;
+        using thread_id_t = rtos_plugin_thread_id_t;
 
       public:
         /**
@@ -136,10 +142,9 @@ namespace segger
         {
           char buf[tmp_buf_size_bytes];
 
-          vsnprintf (buf, sizeof(buf), fmt, args);
+          int ret = vsnprintf (buf, sizeof(buf), fmt, args);
           api_->output (buf);
-
-          return std::strlen (buf);
+          return ret;
         }
 
         /**
@@ -166,10 +171,9 @@ namespace segger
         {
           char buf[tmp_buf_size_bytes];
 
-          vsnprintf (buf, sizeof(buf), fmt, args);
+          int ret = vsnprintf (buf, sizeof(buf), fmt, args);
           api_->output_debug (buf);
-
-          return std::strlen (buf);
+          return ret;
         }
 
         /**
@@ -196,10 +200,12 @@ namespace segger
         {
           char buf[tmp_buf_size_bytes];
 
-          vsnprintf (buf, sizeof(buf), fmt, args);
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+          int ret = vsnprintf (buf, sizeof(buf), fmt, args);
+#pragma GCC diagnostic pop
           api_->output_warning (buf);
-
-          return std::strlen (buf);
+          return ret;
         }
 
         /**
@@ -226,10 +232,19 @@ namespace segger
         {
           char buf[tmp_buf_size_bytes];
 
-          vsnprintf (buf, sizeof(buf), fmt, args);
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+          int ret = vsnprintf (buf, sizeof(buf), fmt, args);
+#pragma GCC diagnostic pop
           api_->output_error (buf);
+          return ret;
+        }
 
-          return std::strlen (buf);
+        inline bool
+        is_target_little_endian (void)
+        {
+          // SEGGER API does not provide this.
+          return true;
         }
 
         /**
@@ -239,17 +254,17 @@ namespace segger
          * If necessary, the target CPU is halted in order to read memory.
          *
          * @param [in] addr Target address to read from.
-         * @param [out] in_array Pointer to buffer for target memory.
-         * @param [in] nbytes Number of bytes to read.
+         * @param [out] out_array Pointer to buffer for target memory.
+         * @param [in] bytes Number of bytes to read.
          *
          * @retval 0 Reading memory OK.
          * @retval <0 Reading memory failed.
          */
         inline int
-        read_byte_array (target_addr_t addr, uint8_t* in_array,
-                         std::size_t nbytes)
+        read_byte_array (target_addr_t addr, uint8_t* out_array,
+                         std::size_t bytes)
         {
-          return api_->read_byte_array (addr, in_array, nbytes);
+          return api_->read_byte_array (addr, out_array, bytes);
         }
 
         /**
@@ -259,15 +274,15 @@ namespace segger
          * If necessary, the target CPU is halted in order to read memory.
          *
          * @param [in] addr Target address to read from.
-         * @param [out] in_byte Pointer to byte.
+         * @param [out] out_value Pointer to byte.
          *
          * @retval 0 Reading memory OK.
          * @retval <0 Reading memory failed.
          */
         inline int
-        read_byte (target_addr_t addr, uint8_t* in_byte)
+        read_byte (target_addr_t addr, uint8_t* out_value)
         {
-          return api_->read_byte (addr, in_byte);
+          return api_->read_byte (addr, out_value);
         }
 
         /**
@@ -277,15 +292,15 @@ namespace segger
          * If necessary, the target CPU is halted in order to read memory.
          *
          * @param [in] addr Target address to read from.
-         * @param [out] in_byte Pointer to two bytes.
+         * @param [out] out_value Pointer to two bytes.
          *
          * @retval 0 Reading memory OK.
          * @retval <0 Reading memory failed.
          */
         inline int
-        read_short (target_addr_t addr, uint16_t* in_short)
+        read_short (target_addr_t addr, uint16_t* out_value)
         {
-          return api_->read_short (addr, in_short);
+          return api_->read_short (addr, out_value);
         }
 
         /**
@@ -295,15 +310,39 @@ namespace segger
          * If necessary, the target CPU is halted in order to read memory.
          *
          * @param [in] addr Target address to read from.
-         * @param [out] in_byte Pointer to four bytes.
+         * @param [out] out_value Pointer to four bytes.
          *
          * @retval 0 Reading memory OK.
          * @retval <0 Reading memory failed.
          */
         inline int
-        read_long (target_addr_t addr, uint32_t* in_long)
+        read_long (target_addr_t addr, uint32_t* out_value)
         {
-          return api_->read_long (addr, in_long);
+          return api_->read_long (addr, out_value);
+        }
+
+        /**
+         * @brief Read eight bytes from the target system.
+         *
+         * @details
+         * If necessary, the target CPU is halted in order to read memory.
+         *
+         * @param [in] addr Target address to read from.
+         * @param [out] out_value Pointer to eight bytes.
+         *
+         * @retval 0 Reading memory OK.
+         * @retval <0 Reading memory failed.
+         */
+        int
+        read_long_long (target_addr_t addr, uint64_t* out_value)
+        {
+          uint8_t buf[8];
+          int ret = read_byte_array (addr, &buf[0], sizeof(buf));
+          if (ret >= 0)
+            {
+              *out_value = load_long_long (&buf[0]);
+            }
+          return ret;
         }
 
         /**
@@ -313,17 +352,17 @@ namespace segger
          * If necessary, the target CPU is halted in order to read memory.
          *
          * @param [in] addr Target address to write to.
-         * @param [in] out_array Pointer to buffer for target memory.
-         * @param [in] nbytes Number of bytes to write.
+         * @param [in] array Pointer to buffer for target memory.
+         * @param [in] bytes Number of bytes to write.
          *
          * @retval 0 Writing memory OK.
          * @retval <0 Writing memory failed.
          */
         inline int
-        write_byte_array (target_addr_t addr, const uint8_t* out_array,
-                          std::size_t nbytes)
+        write_byte_array (target_addr_t addr, const uint8_t* array,
+                          std::size_t bytes)
         {
-          return api_->write_byte_array (addr, out_array, nbytes);
+          return api_->write_byte_array (addr, array, bytes);
         }
 
         /**
@@ -333,15 +372,15 @@ namespace segger
          * If necessary, the target CPU is halted in order to read memory.
          *
          * @param [in] addr Target address to write to.
-         * @param [in] out_byte Byte to write.
+         * @param [in] value Byte to write.
          *
          * @retval 0 Writing memory OK.
          * @retval <0 Writing memory failed.
          */
         inline void
-        write_byte (target_addr_t addr, uint8_t out_byte)
+        write_byte (target_addr_t addr, uint8_t value)
         {
-          api_->write_byte (addr, out_byte);
+          api_->write_byte (addr, value);
         }
 
         /**
@@ -351,15 +390,15 @@ namespace segger
          * If necessary, the target CPU is halted in order to read memory.
          *
          * @param [in] addr Target address to write to.
-         * @param [in] out_short Bytes to write.
+         * @param [in] value Bytes to write.
          *
          * @retval 0 Writing memory OK.
          * @retval <0 Writing memory failed.
          */
         inline void
-        write_short (target_addr_t addr, uint16_t out_short)
+        write_short (target_addr_t addr, uint16_t value)
         {
-          api_->write_short (addr, out_short);
+          api_->write_short (addr, value);
         }
 
         /**
@@ -369,15 +408,70 @@ namespace segger
          * If necessary, the target CPU is halted in order to read memory.
          *
          * @param [in] addr Target address to write to.
-         * @param [in] out_long Bytes to write.
+         * @param [in] value Bytes to write.
          *
          * @retval 0 Writing memory OK.
          * @retval <0 Writing memory failed.
          */
         inline void
-        write_long (target_addr_t addr, uint32_t out_long)
+        write_long (target_addr_t addr, uint32_t value)
         {
-          api_->write_long (addr, out_long);
+          api_->write_long (addr, value);
+        }
+
+        /**
+         * @brief Write eight bytes to the target system.
+         *
+         * @details
+         * If necessary, the target CPU is halted in order to read memory.
+         *
+         * @param [in] addr Target address to write to.
+         * @param [in] value Bytes to write.
+         *
+         * @retval 0 Writing memory OK.
+         * @retval <0 Writing memory failed.
+         */
+        void
+        write_long_long (target_addr_t addr, uint64_t value)
+        {
+          uint8_t array[8];
+          if (is_target_little_endian ())
+            {
+              array[0] = value & 0xFF;
+              value >>= 8;
+              array[1] = value & 0xFF;
+              value >>= 8;
+              array[2] = value & 0xFF;
+              value >>= 8;
+              array[3] = value & 0xFF;
+              value >>= 8;
+              array[4] = value & 0xFF;
+              value >>= 8;
+              array[5] = value & 0xFF;
+              value >>= 8;
+              array[6] = value & 0xFF;
+              value >>= 8;
+              array[7] = value & 0xFF;
+            }
+          else
+            {
+              array[7] = value & 0xFF;
+              value >>= 8;
+              array[6] = value & 0xFF;
+              value >>= 8;
+              array[5] = value & 0xFF;
+              value >>= 8;
+              array[4] = value & 0xFF;
+              value >>= 8;
+              array[3] = value & 0xFF;
+              value >>= 8;
+              array[2] = value & 0xFF;
+              value >>= 8;
+              array[1] = value & 0xFF;
+              value >>= 8;
+              array[0] = value & 0xFF;
+            }
+          write_byte_array (addr, &array[0], 8);
         }
 
         /**
@@ -388,24 +482,10 @@ namespace segger
          *
          * @return The converted value.
          */
-        inline uint32_t
+        inline uint16_t
         load_short (const uint8_t* p)
         {
           return api_->load_short (p);
-        }
-
-        /**
-         * @brief Load three bytes from a memory buffer according to the
-         * target endianness.
-         *
-         * @param [in] p Pointer to memory buffer.
-         *
-         * @return The converted value.
-         */
-        inline uint32_t
-        load_3bytes (const uint8_t* p)
-        {
-          return api_->load_3bytes (p);
         }
 
         /**
@@ -422,11 +502,68 @@ namespace segger
           return api_->load_long (p);
         }
 
+        /**
+         * @brief Load eight bytes from a memory buffer according to the
+         * target endianness.
+         *
+         * @param [in] p Pointer to memory buffer.
+         *
+         * @return The converted value.
+         */
+        inline uint64_t
+        load_long_long (const uint8_t* p)
+        {
+          uint64_t val;
+          if (is_target_little_endian ())
+            {
+              val = p[7];
+              val <<= 8;
+              val = p[6];
+              val <<= 8;
+              val = p[5];
+              val <<= 8;
+              val = p[4];
+              val <<= 8;
+              val = p[3];
+              val <<= 8;
+              val = p[2];
+              val <<= 8;
+              val = p[1];
+              val <<= 8;
+              val |= p[0];
+            }
+          else
+            {
+              val = p[0];
+              val <<= 8;
+              val |= p[1];
+              val <<= 8;
+              val |= p[2];
+              val <<= 8;
+              val |= p[3];
+              val <<= 8;
+              val |= p[4];
+              val <<= 8;
+              val |= p[5];
+              val <<= 8;
+              val |= p[6];
+              val <<= 8;
+              val |= p[7];
+            }
+          return val;
+        }
+
       private:
+
         const server_api_t* api_;
         const symbols_t* symbols_;
       };
 
+#pragma GCC diagnostic pop
+
+    ;
+  // Avoid formatter bug
+  // ==========================================================================
   } /* namespace drtm */
 } /* namespace segger */
 

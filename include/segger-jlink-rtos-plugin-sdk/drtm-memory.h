@@ -97,7 +97,7 @@ namespace segger
                   std::error_code (EINVAL, std::system_category ()));
             }
 
-          value_type*p = static_cast<value_type*> (api_->allocate (
+          value_type*p = static_cast<value_type*> (api_->malloc (
               objects * sizeof(value_type)));
 
 #if defined(DEBUG)
@@ -115,7 +115,7 @@ namespace segger
 #endif /* defined(DEBUG) */
 
           assert(objects <= max_size ());
-          api_->deallocate (p);
+          api_->free (p);
         }
 
         std::size_t
@@ -136,140 +136,8 @@ namespace segger
         const server_api_t* api_;
       };
 
-    // ========================================================================
-
-    /**
-     * @brief A memory manager that allocates memory via
-     * the backend allocate() function.
-     *
-     * Useful when the application requires a polymorphic allocator;
-     * otherwise use the simple allocator.
-     */
-    template<typename S>
-      class memory_resource : public ::drtm::memory_resource
-      {
-      public:
-
-        using server_api_t = S;
-
-      public:
-
-        /**
-         * @name Constructors & Destructor
-         * @{
-         */
-
-        /**
-         * @brief Construct a named memory manager object instance.
-         */
-        memory_resource (const server_api_t* api)
-        {
-          api_ = api;
-#if defined(DEBUG)
-          printf ("%s(%p) @%p\n", __func__, api, this);
-#endif
-        }
-
-        /**
-         * @cond ignore
-         */
-
-        memory_resource (const memory_resource&) = delete;
-        memory_resource (memory_resource&&) = delete;
-        memory_resource&
-        operator= (const memory_resource&) = delete;
-        memory_resource&
-        operator= (memory_resource&&) = delete;
-
-        /**
-         * @endcond
-         */
-
-        /**
-         * @brief Destruct the memory manager object instance.
-         */
-        virtual
-        ~memory_resource ()
-        {
-#if defined(DEBUG)
-          printf ("%s() @%p\n", __func__, this);
-#endif
-        }
-
-        /**
-         * @}
-         */
-
-      protected:
-
-        /**
-         * @name Private Member Functions
-         * @{
-         */
-
-        /**
-         * @brief Implementation of the memory allocator.
-         * @param bytes Number of bytes to allocate.
-         * @param alignment Alignment constraint (power of 2).
-         * @return Pointer to newly allocated block, or `nullptr`.
-         */
-        virtual void*
-        do_allocate (std::size_t bytes, std::size_t align) override
-        {
-#if defined(DEBUG)
-          printf ("%s(%zu,%zu) @%p\n", __func__, bytes, align, this);
-#endif
-          // Ignore alignment for now.
-          void* mem = api_->allocate (bytes);
-#if defined(DEBUG_)
-          printf ("%s(%zu,%zu)=%p @%p\n", __func__, bytes, align, mem,
-              this);
-#endif
-
-          return mem;
-        }
-
-        /**
-         * @brief Implementation of the memory deallocator.
-         * @param addr Address of a previously allocated block to free.
-         * @param bytes Number of bytes to deallocate (may be 0 if unknown).
-         * @param alignment Alignment constraint (power of 2).
-         * @par Returns
-         *  Nothing.
-         */
-        virtual void
-        do_deallocate (void* addr, std::size_t bytes, std::size_t alignment) noexcept override
-        {
-#if defined(DEBUG)
-          printf ("%s(%p,%zu,%zu) @%p\n", __func__, addr, bytes, alignment,
-                  this);
-#endif
-          // Ignore size and alignment for now.
-          api_->deallocate (addr);
-        }
-
-        /**
-         * @brief Implementation of the equality comparator.
-         * @param other Reference to another `memory_resource`.
-         * @retval true The `memory_resource` objects are equal.
-         * @retval false The `memory_resource` objects are not equal.
-         */
-        virtual bool
-        do_is_equal (::drtm::memory_resource const &other) const noexcept override
-        {
-          // Actually there is only one such allocator, the backend is unique.
-          return true;
-        }
-
-        /**
-         * @}
-         */
-
-      private:
-
-        const server_api_t* api_;
-      };
-
+    ;
+  // Avoid formatter bug
   // ==========================================================================
   } /* namespace drtm */
 } /* namespace segger */

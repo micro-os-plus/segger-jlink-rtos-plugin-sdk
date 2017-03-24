@@ -72,6 +72,7 @@ extern "C"
 #endif /* defined(__cplusplus) */
 
   typedef uint32_t rtos_plugin_target_addr_t;
+  typedef uint32_t rtos_plugin_thread_id_t;
 
   // RTOS symbols.
   typedef struct rtos_plugin_symbols_s
@@ -93,24 +94,24 @@ extern "C"
      * @param [in] p Pointer to the memory block.
      */
     void
-    (*deallocate) (void* p);
+    (*free) (void* p);
 
     /**
-     * @param [in] nbytes Size of memory block.
+     * @param [in] bytes Size of memory block.
      *
      * @return Pointer to the allocated memory block. NULL, if the memory could not be allocated.
      */
     void*
-    (*allocate) (size_t nbytes);
+    (*malloc) (size_t bytes);
 
     /**
      * @param [in] p Pointer to old memory block.
-     * @param [in] nbytes New size of memory block.
+     * @param [in] bytes New size of memory block.
      *
      * @return Pointer to the allocated memory block. NULL, if the memory could not be allocated.
      */
     void*
-    (*reallocate) (void* p, unsigned nbytes);
+    (*realloc) (void* p, unsigned bytes);
 
     /**
      * @brief Output a formatted log message to J-Link GDB server window.
@@ -159,15 +160,15 @@ extern "C"
      * If necessary, the target CPU is halted in order to read memory.
      *
      * @param [in] addr Target address to read from.
-     * @param [out] in_array Pointer to buffer for target memory.
-     * @param [in] nbytes Number of bytes to read.
+     * @param [out] out_array Pointer to buffer for target memory.
+     * @param [in] bytes Number of bytes to read.
      *
      * @retval 0 Reading memory OK.
      * @retval <0 Reading memory failed.
      */
     int
-    (*read_byte_array) (rtos_plugin_target_addr_t addr, uint8_t* in_array,
-                        size_t nbytes);
+    (*read_byte_array) (rtos_plugin_target_addr_t addr, uint8_t* out_array,
+                        size_t bytes);
 
     /**
      * @brief Read one byte from the target system.
@@ -176,13 +177,13 @@ extern "C"
      * If necessary, the target CPU is halted in order to read memory.
      *
      * @param [in] addr Target address to read from.
-     * @param [out] in_byte Pointer to byte.
+     * @param [out] out_value Pointer to byte.
      *
      * @retval 0 Reading memory OK.
      * @retval <0 Reading memory failed.
      */
     int
-    (*read_byte) (rtos_plugin_target_addr_t addr, uint8_t* in_byte);
+    (*read_byte) (rtos_plugin_target_addr_t addr, uint8_t* out_value);
 
     /**
      * @brief Read two bytes from the target system.
@@ -191,13 +192,13 @@ extern "C"
      * If necessary, the target CPU is halted in order to read memory.
      *
      * @param [in] addr Target address to read from.
-     * @param [out] in_byte Pointer to two bytes.
+     * @param [out] out_value Pointer to two bytes.
      *
      * @retval 0 Reading memory OK.
      * @retval <0 Reading memory failed.
      */
     int
-    (*read_short) (rtos_plugin_target_addr_t addr, uint16_t* in_short);
+    (*read_short) (rtos_plugin_target_addr_t addr, uint16_t* out_value);
 
     /**
      * @brief Read four bytes from the target system.
@@ -206,13 +207,13 @@ extern "C"
      * If necessary, the target CPU is halted in order to read memory.
      *
      * @param [in] addr Target address to read from.
-     * @param [out] in_byte Pointer to four bytes.
+     * @param [out] out_value Pointer to four bytes.
      *
      * @retval 0 Reading memory OK.
      * @retval <0 Reading memory failed.
      */
     int
-    (*read_long) (rtos_plugin_target_addr_t addr, uint32_t* in_long);
+    (*read_long) (rtos_plugin_target_addr_t addr, uint32_t* out_value);
 
     /**
      * @brief Write memory to the target system.
@@ -221,15 +222,15 @@ extern "C"
      * If necessary, the target CPU is halted in order to read memory.
      *
      * @param [in] addr Target address to read from.
-     * @param [in] out_array Pointer to buffer for target memory.
-     * @param [in] nbytes Number of bytes to read.
+     * @param [in] array Pointer to buffer for target memory.
+     * @param [in] bytes Number of bytes to read.
      *
      * @retval 0 Writing memory OK.
      * @retval <0 Writing memory failed.
      */
     int
-    (*write_byte_array) (rtos_plugin_target_addr_t addr,
-                         const uint8_t* out_array, size_t nbytes);
+    (*write_byte_array) (rtos_plugin_target_addr_t addr, const uint8_t* array,
+                         size_t bytes);
 
     /**
      * @brief Write one byte to the target system.
@@ -238,13 +239,13 @@ extern "C"
      * If necessary, the target CPU is halted in order to read memory.
      *
      * @param [in] addr Target address to read from.
-     * @param [in] out_byte Byte to write.
+     * @param [in] value Byte to write.
      *
      * @retval 0 Writing memory OK.
      * @retval <0 Writing memory failed.
      */
     void
-    (*write_byte) (rtos_plugin_target_addr_t addr, uint8_t out_byte);
+    (*write_byte) (rtos_plugin_target_addr_t addr, uint8_t value);
 
     /**
      * @brief Write two bytes to the target system.
@@ -253,13 +254,13 @@ extern "C"
      * If necessary, the target CPU is halted in order to read memory.
      *
      * @param [in] addr Target address to read from.
-     * @param [in] out_short Bytes to write.
+     * @param [in] value Bytes to write.
      *
      * @retval 0 Writing memory OK.
      * @retval <0 Writing memory failed.
      */
     void
-    (*write_short) (rtos_plugin_target_addr_t addr, uint16_t out_short);
+    (*write_short) (rtos_plugin_target_addr_t addr, uint16_t value);
 
     /**
      * @brief Write four bytes to the target system.
@@ -268,13 +269,13 @@ extern "C"
      * If necessary, the target CPU is halted in order to read memory.
      *
      * @param [in] addr Target address to read from.
-     * @param [in] out_long Bytes to write.
+     * @param [in] value Bytes to write.
      *
      * @retval 0 Writing memory OK.
      * @retval <0 Writing memory failed.
      */
     void
-    (*write_long) (rtos_plugin_target_addr_t addr, uint32_t out_long);
+    (*write_long) (rtos_plugin_target_addr_t addr, uint32_t value);
 
     /**
      * @brief Load two bytes from a memory buffer according to the
@@ -522,7 +523,7 @@ extern "C"
 
 #if defined(__cplusplus)
 }
-#endif
+#endif /* defined(__cplusplus) */
 
 #endif /* SEGGER_JLINK_SDK_RTOS_PLUGIN_H_ */
 
