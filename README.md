@@ -16,8 +16,7 @@ This xPack does not include any original SEGGER files.
 
 ## License
 
-The original content is released under the MIT License, with
-all rights reserved to Liviu Ionescu.
+The original content is released under the [MIT License](https://opensource.org/licenses/MIT), with all rights reserved to [Liviu Ionescu](https://github.com/ilg-ul).
 
 The plug-in client API definitions (the `RTOS_*` functions) and the 
 GDB server API definitions are compatible with the SEGGER GDBServer 
