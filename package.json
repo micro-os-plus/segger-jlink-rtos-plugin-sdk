@@ -1,7 +1,7 @@
 {
   "name": "@ilg/segger-jlink-rtos-plugin-sdk",
   "version": "0.0.4",
-  "description": "An xPack with the SEGGER J-Link GDB RTOS plug-in SDK",
+  "description": "A source xPack with the SEGGER J-Link GDB RTOS plug-in SDK",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "version": "bash scripts/version.sh"
@@ -10,6 +10,7 @@
     "type": "git",
     "url": "git+https://github.com/micro-os-plus/segger-jlink-rtos-plugin-sdk.git"
   },
+  "homepage": "https://github.com/micro-os-plus/segger-jlink-rtos-plugin-sdk",
   "keywords": [
     "xpack",
     "segger",
@@ -26,7 +27,7 @@
   "author": {
     "name": "Liviu Ionescu",
     "email": "ilg@livius.net",
-    "url": "http://liviusdotnet.wordpress.com"
+    "url": "https://github.com/ilg-ul"
   },
   "contributors": [
     {
@@ -43,6 +44,5 @@
   "dependencies": {
     "@ilg/drtm": "latest"
   },
-  "xpack": {},
-  "homepage": "https://github.com/micro-os-plus/segger-jlink-rtos-plugin-sdk"
+  "xpack": {}
 }
