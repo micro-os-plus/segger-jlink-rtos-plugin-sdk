@@ -4,7 +4,7 @@
 
 # SEGGER J-Link GDB RTOS plug-in SDK
 
-An xPack with the SEGGER J-Link GDB RTOS plug-in SDK sources. 
+A source xPack with the SEGGER J-Link GDB RTOS plug-in SDK sources. 
 
 This SDK is the base for thread-aware debugging plug-ins for SEGGER J-Link GDB server.
 
